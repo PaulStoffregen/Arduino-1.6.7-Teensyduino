@@ -293,6 +293,7 @@
 
   <target name="macosx-build" if="macosx" depends="revision-check, macosx-checkos, subprojects-build" description="Build Mac OS X version">
     <fail unless="MACOSX_BUNDLED_JVM" message="MacOSX requires MACOSX_BUNDLED_JVM property set"/>
+<!--
     <mkdir dir="${staging_folder}/work" />
 
     <antcall target="unzip">
@@ -336,7 +337,7 @@
       <option value="-Dcom.apple.macos.useScreenMenuBar=true"/>
       <option value="-DAPP_DIR=$APP_ROOT/Contents/Java"/>
       <option value="-Djava.ext.dirs=$JVM_RUNTIME/Contents/Home/lib/ext/:$JVM_RUNTIME/Contents/Home/jre/lib/ext/"/>
-
+-->
       <!--
       <option value="-Dapple.awt.showGrowBox=false"/>
       <option value="-Dapple.awt.Antialiasing=false"/>
@@ -348,6 +349,7 @@
       <!--<option value="-Dcom.apple.macos.useScreenMenuBar=true"/>-->
 
       <!-- Workaround since the icon parameter for bundleapp doesn't work -->
+<!--
       <option value="-Xdock:name=Arduino"/>
       <option value="-Dcom.apple.mrj.application.apple.menu.about.name=Arduino"/>
       <option value="-Dfile.encoding=UTF-8"/>
@@ -412,6 +414,7 @@
     <antcall target="portable-${portable}">
       <param name="parentdir" value="macosx/work/${staging_hardware_folder}/.." />
     </antcall>
+-->
   </target>
 
   <!-- Unzip AVR tools -->
@@ -537,6 +540,7 @@
   </target>
 
   <target name="linux-build" depends="revision-check, linux-checkos, subprojects-build" description="Build linux version">
+<!--
     <mkdir dir="linux/work" />
     <mkdir dir="linux/work/${staging_hardware_folder}" />
 
@@ -585,9 +589,11 @@
     <antcall target="portable-${portable}">
       <param name="parentdir" value="linux/work" />
     </antcall>
+-->
   </target>
 
   <target name="linux32-build" depends="linux-build" description="Build linux (32-bit) version">
+<!--
     <antcall target="linux-jvm-${linux-bundle-jvm-task}">
       <param name="JVM" value="${LINUX32_BUNDLED_JVM}"/>
     </antcall>
@@ -617,9 +623,11 @@
     </antcall>
 
     <antcall target="package-library-index-json-bundle"/>
+-->
   </target>
 
   <target name="linux64-build" depends="linux-build" description="Build linux (64-bit) version">
+<!--
     <antcall target="linux-jvm-${linux-bundle-jvm-task}">
       <param name="JVM" value="${LINUX64_BUNDLED_JVM}"/>
     </antcall>
@@ -649,6 +657,7 @@
     </antcall>
 
     <antcall target="package-library-index-json-bundle"/>
+-->
   </target>
 
   <target name="linux-jvm-noop"/>
@@ -804,14 +813,16 @@
   <target name="windows-build"
 	  depends="revision-check, windows-checkos, subprojects-build"
 	  description="Build windows version">
+<!--
     <mkdir dir="windows/work" />
     <mkdir dir="windows/work/${staging_hardware_folder}" />
 
     <copy todir="windows/work/lib">
       <fileset dir="shared" includes="icons/**/*.png"/>
     </copy>
-
+-->
     <!-- assemble the pde -->
+<!--
     <mkdir dir="windows/work/lib" />
     <copy todir="windows/work/lib" flatten="true">
       <fileset refid="runtime.jars" />
@@ -844,8 +855,9 @@
     <copy file="windows/libastylej-2.05.1/AStylej.dll" todir="windows/work/lib" />
     <copy file="windows/msvcp100.dll" todir="windows/work" />
     <copy file="windows/msvcr100.dll" todir="windows/work" />
-
+-->
     <!-- Copy listComPort.exe tool -->
+<!--
     <copy todir="windows/work/hardware/tools">
       <fileset file="windows/listComPorts.exe" />
     </copy>
@@ -890,13 +902,15 @@
     <launch4j configFile="windows/work/config_debug.xml" fileVersion="${revision}.0" txtFileVersion="${revision}" productVersion="${revision}.0" txtProductVersion="${revision}"/>
     <delete dir="windows/work" includes="application.ico, config.xml, config_debug.xml" />
     <copy file="windows/work/arduino.l4j.ini" tofile="windows/work/arduino_debug.l4j.ini" />
-
+-->
     <!-- cygwin requires html, dll, and exe to have the +x flag -->
+<!--
     <chmod perm="755">
       <fileset dir="windows/work" includes="**/*.html, **/*.dll, **/*.exe" />
     </chmod>
-
+-->
     <!-- For JVM within JDK, release file is in parent directory -->
+<!--
     <property file="${WINDOWS_BUNDLED_JVM}/release" prefix="windows"/>
     <property file="${WINDOWS_BUNDLED_JVM}/../release" prefix="windows"/>
 
@@ -915,6 +929,7 @@
     <antcall target="portable-${portable}">
       <param name="parentdir" value="${staging_folder}/work" />
     </antcall>
+-->
   </target>
 
   <target name="windows-build-avr-toolchain">
