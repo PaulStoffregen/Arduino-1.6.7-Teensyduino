@@ -40,6 +40,7 @@ import processing.app.debug.*;
 import processing.app.helpers.PreferencesMap;
 import processing.app.helpers.PreferencesMapException;
 import processing.app.helpers.StringReplacer;
+import processing.app.helpers.OSUtils;
 import processing.app.legacy.PApplet;
 import processing.app.tools.DoubleQuotedArgumentsOnWindowsCommandLine;
 
@@ -249,6 +250,9 @@ public class Compiler implements MessageConsumer {
 
     DefaultExecutor executor = new DefaultExecutor();
     executor.setStreamHandler(streamHandler);
+    if (BaseNoGui.isTeensyduino() && OSUtils.isMacOS()) {
+      executor.setWorkingDirectory(new File("/tmp"));
+    }
 
     int result;
     executor.setExitValues(null);
@@ -499,6 +503,8 @@ public class Compiler implements MessageConsumer {
   public void message(String s) {
     int i;
 
+    if (BaseNoGui.isTeensyduino()) { message_Teensy(s); return; }
+
     if (!verbose) {
       while ((i = s.indexOf(buildPath + File.separator)) != -1) {
         s = s.substring(0, i) + s.substring(i + (buildPath + File.separator).length());
@@ -602,4 +608,69 @@ public class Compiler implements MessageConsumer {
     }
     return null;
   }
+
+  private void message_Teensy(String s) {
+    s = s.trim();
+    //System.out.println("Original message: " + s);
+    String advice = null;
+    String[] pieces = PApplet.match(s, "(\\w+\\.\\w+):(\\d+):\\d+:\\s*error:\\s*(.+)");
+    if (pieces != null) {
+      //if (!sketchIsCompiled) {
+        // Place errors when compiling the sketch, but never while compiling libraries
+        // or the core.  The user's sketch might contain the same filename!
+        RunnerException e;
+        e = placeException(pieces[3], pieces[1], PApplet.parseInt(pieces[2]) - 1);
+        if (e != null) {
+          if (!verbose) {
+            SketchCode code = sketch.getCode(e.getCodeIndex());
+            String fileName = (code.isExtension("ino") || code.isExtension("pde")) ?
+              code.getPrettyName() : code.getFileName();
+            int lineNum = e.getCodeLine() + 1;
+            s = fileName + ":" + lineNum + ": error: " + pieces[3];
+            //System.out.println("friendly message: " + s);
+          }
+          e.hideStackTrace();
+          exception = e;
+        }
+        advice = message_advice_Teensy(pieces[3].trim());
+      //}
+    }
+    System.err.print(s + "\n");
+    if (advice != null) System.err.print(advice + "\n");
+  }
+
+  private String message_advice_Teensy(String s) {
+    if (s.equals("'Keyboard' was not declared in this scope")) {
+      return "To make a USB Keyboard, use the Tools > USB Type menu";
+    }
+    if (s.equals("'Mouse' was not declared in this scope")) {
+      return "To make a USB Mouse, use the Tools > USB Type menu";
+    }
+    if (s.equals("'Joystick' was not declared in this scope")) {
+      return "To make a USB Joystick, use the Tools > USB Type menu";
+    }
+    if (s.equals("'Disk' was not declared in this scope")) {
+      return "To make a USB Disk, use the Tools > USB Type menu";
+    }
+    if (s.equals("'usbMIDI' was not declared in this scope")) {
+      return "To make a USB MIDI device, use the Tools > USB Type menu";
+    }
+    if (s.equals("'RawHID' was not declared in this scope")) {
+      return "To make a USB RawHID device, use the Tools > USB Type menu";
+    }
+    if (s.equals("'FlightSimCommand' was not declared in this scope")) {
+      return "To make a Flight Simulator device, use the Tools > USB Type menu";
+    }
+    if (s.equals("'FlightSimInteger' was not declared in this scope")) {
+      return "To make a Flight Simulator device, use the Tools > USB Type menu";
+    }
+    if (s.equals("'FlightSimFloat' was not declared in this scope")) {
+      return "To make a Flight Simulator device, use the Tools > USB Type menu";
+    }
+    if (s.equals("'FlightSim' was not declared in this scope")) {
+      return "To make a Flight Simulator device, use the Tools > USB Type menu";
+    }
+    return null;
+  }
+
 }
