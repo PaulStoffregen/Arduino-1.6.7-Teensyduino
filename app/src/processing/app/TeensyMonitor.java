@@ -364,6 +364,7 @@ class FakeSerial extends Serial {
 			Thread.sleep(20);
 		} catch (Exception e) { }
 	}
+	@Override
 	public void dispose() {
 		if (listener != null) {
 			listener.interrupt();
@@ -406,6 +407,7 @@ class FakeSerial extends Serial {
 	protected void message(char[] chars, int length) {
 		// override from SerialMonitor
 	}
+	@Override
 	public void write(byte bytes[]) {
 		if (output == null) return;
 		if (bytes.length > 0) {
@@ -414,15 +416,19 @@ class FakeSerial extends Serial {
 			} catch (IOException e) { }
 		}
 	}
+	@Override
 	public void write(int what) {
 		byte[] b = new byte[1];
 		b[0] = (byte)(what & 0xff);
 		write(b);
 	}
+	@Override
 	public void setDTR(boolean state) {
 	}
+	@Override
 	public void setRTS(boolean state) {
 	}
+	@Override
 	public boolean isOnline() {
 		return true;
 	}
