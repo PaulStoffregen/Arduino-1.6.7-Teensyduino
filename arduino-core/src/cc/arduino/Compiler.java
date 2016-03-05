@@ -114,6 +114,8 @@ public class Compiler implements MessageConsumer {
   private final String buildPath;
   private final boolean verbose;
   private RunnerException exception;
+  private boolean printAsError;
+  private int messageCount;
 
   public Compiler(SketchData data, String buildPath) {
     this(data.getMainFilePath(), data, buildPath);
@@ -250,8 +252,12 @@ public class Compiler implements MessageConsumer {
 
     DefaultExecutor executor = new DefaultExecutor();
     executor.setStreamHandler(streamHandler);
-    if (BaseNoGui.isTeensyduino() && OSUtils.isMacOS()) {
-      executor.setWorkingDirectory(new File("/tmp"));
+    if (BaseNoGui.isTeensyduino()) {
+      if (OSUtils.isMacOS()) {
+        executor.setWorkingDirectory(new File("/tmp"));
+      }
+      printAsError = true;
+      messageCount = 0;
     }
 
     int result;
@@ -609,34 +615,74 @@ public class Compiler implements MessageConsumer {
     return null;
   }
 
+
   private void message_Teensy(String s) {
-    s = s.trim();
-    //System.out.println("Original message: " + s);
-    String advice = null;
-    String[] pieces = PApplet.match(s, "(\\w+\\.\\w+):(\\d+):\\d+:\\s*error:\\s*(.+)");
+    //System.out.println("\nOriginal message: \"" + s + "\"");
+    messageCount++;
+    String[] pieces = PApplet.match(s.trim(), "(\\w+\\.\\w+):(\\d+):\\d+:\\s*error:\\s*(.+)");
     if (pieces != null) {
-      //if (!sketchIsCompiled) {
-        // Place errors when compiling the sketch, but never while compiling libraries
-        // or the core.  The user's sketch might contain the same filename!
-        RunnerException e;
-        e = placeException(pieces[3], pieces[1], PApplet.parseInt(pieces[2]) - 1);
-        if (e != null) {
-          if (!verbose) {
-            SketchCode code = sketch.getCode(e.getCodeIndex());
-            String fileName = (code.isExtension("ino") || code.isExtension("pde")) ?
-              code.getPrettyName() : code.getFileName();
-            int lineNum = e.getCodeLine() + 1;
-            s = fileName + ":" + lineNum + ": error: " + pieces[3];
-            //System.out.println("friendly message: " + s);
-          }
+      //System.out.println("Case 1: Error");
+      printAsError = true;
+      RunnerException e = placeException(pieces[3], pieces[1], PApplet.parseInt(pieces[2]) - 1);
+      if (e != null) {
+        SketchCode code = sketch.getCode(e.getCodeIndex());
+        String fileName = (code.isExtension("ino") || code.isExtension("pde")) ?
+          code.getPrettyName() : code.getFileName();
+        int lineNum = e.getCodeLine() + 1;
+        s = fileName + ":" + lineNum + ": error: " + pieces[3];
+        if (exception == null) {
           e.hideStackTrace();
           exception = e;
         }
-        advice = message_advice_Teensy(pieces[3].trim());
-      //}
+      }
+      System.err.println(s);
+      s = message_advice_Teensy(pieces[3].trim());
+      if (s != null) System.err.println(s);
+    } else {
+      pieces = PApplet.match(s.trim(), "(\\w+\\.\\w+):(\\d+):\\d+:\\s*warning:\\s*(.+)\\s*\\[-W[-a-z0-9]+\\]");
+      if (pieces != null) {
+        //System.out.println("Case 2: Warning");
+        printAsError = false;
+        RunnerException e = placeException(pieces[3], pieces[1], PApplet.parseInt(pieces[2]) - 1);
+        if (e != null) {
+          SketchCode code = sketch.getCode(e.getCodeIndex());
+          String fileName = (code.isExtension("ino") || code.isExtension("pde")) ?
+            code.getPrettyName() : code.getFileName();
+          int lineNum = e.getCodeLine() + 1;
+          s = fileName + ":" + lineNum + ": warning: " + pieces[3];
+        }
+        System.out.println(s);
+      } else {
+        pieces = PApplet.match(s.trim(), "(\\w+\\.\\w+):\\s*In function\\s*(.+)");
+        if (pieces != null) {
+          //System.out.println("Case 3: In function");
+          RunnerException e = placeException(pieces[2], pieces[1], 0);
+          if (e != null) {
+            SketchCode code = sketch.getCode(e.getCodeIndex());
+            String fileName = (code.isExtension("ino") || code.isExtension("pde")) ?
+              code.getPrettyName() : code.getFileName();
+            s = fileName + ": In function " + pieces[2];
+          }
+          System.out.println(s);
+        } else {
+          if (s.equals("exit status 1")) {
+            //System.out.println("Case 4: exit status 1");
+            if (messageCount <= 1) {
+              System.err.println("Oh no, the compiler quit with an error, but did not print any error messages!");
+              System.err.println("Your computer may be running out of memory or resources.  Try closing other");
+              System.err.println("windows or programs");
+            }
+          } else {
+            //System.out.println("Case 5: other stuff (likely quoting code)");
+            if (printAsError) {
+              System.err.println(s);
+            } else {
+              System.out.println(s);
+            }
+          }
+        }
+      }
     }
-    System.err.print(s + "\n");
-    if (advice != null) System.err.print(advice + "\n");
   }
 
   private String message_advice_Teensy(String s) {
