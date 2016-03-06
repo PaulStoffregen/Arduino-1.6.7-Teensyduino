@@ -236,7 +236,10 @@ public class Compiler implements MessageConsumer {
       .stream()
       .forEach(kv -> commandLine.addArgument("-prefs=\"" + kv.getKey() + "=" + kv.getValue() + "\"", false));
 
-    commandLine.addArgument("-prefs=build.warn_data_percentage=" + PreferencesData.get("build.warn_data_percentage"));
+    if (!BaseNoGui.isTeensyduino()) {
+      // Teensy provide this setting for all boards, so don't override it with 75%
+      commandLine.addArgument("-prefs=build.warn_data_percentage=" + PreferencesData.get("build.warn_data_percentage"));
+    }
 
     //commandLine.addArgument("-debug-level=10", false);
 
